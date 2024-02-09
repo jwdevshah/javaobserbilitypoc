@@ -1,0 +1,101 @@
+
+
+plugins {
+    id 'org.springframework.boot' version '2.6.4'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id 'application' // Add this line
+}
+
+configure(allprojects) {
+    sourceCompatibility = JavaVersion.VERSION_17 // Set the sourceCompatibility here
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.6.4'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus:latest.release' // Add this line
+    implementation 'io.micrometer:micrometer-registry-new-relic'
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+
+
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'ch.qos.logback:logback-classic:1.2.3'
+
+    // Testing dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testImplementation 'org.testng:testng:7.1.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+}
+
+tasks.withType(org.springframework.boot.gradle.tasks.bundling.BootJar) {
+    archiveFileName.set('javaobservabilitypoc.jar') // Updated JAR name
+}
+
+// Add 'idea' task to generate IntelliJ IDEA project files
+apply plugin: 'idea'
+
+// Configure the 'idea' task
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+application {
+    mainClassName = 'javaobservabilitypoc.JavaObservabilityPocApplication'
+    applicationDefaultJvmArgs = ['--add-opens', 'java.base/java.lang=ALL-UNNAMED']
+}
+
+task createDeploymentFile {
+    doLast {
+        def fileName = "${rootProject.name}-deployment.yaml"
+        def fileContent = """
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${rootProject.name}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${rootProject.name}
+  template:
+    metadata:
+      labels:
+        app: ${rootProject.name}
+    spec:
+      containers:
+      - name: ${rootProject.name}
+        image: ${rootProject.name}
+        ports:
+        - containerPort: 7101
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${rootProject.name}
+spec:
+  type: NodePort
+  selector:
+    app: ${rootProject.name}
+  ports:
+    - protocol: TCP
+      port: 7101
+      targetPort: 7101
+"""
+        file(fileName).write(fileContent)
+        println "File $fileName created."
+    }
+}

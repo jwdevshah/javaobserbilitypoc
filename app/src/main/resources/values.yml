@@ -1,0 +1,13 @@
+global:
+  licenseKey: 05fb51cd2ebd9ecde035bb90b2d999caFFFFNRAL
+  cluster: jwshahdev
+nri-kube-events:
+  enabled: true
+nri-metadata-injection:
+  enabled: true
+nri-prometheus:
+  enabled: true
+newrelic-logging:
+  enabled: true
+kube-state-metrics:
+  enabled: true
